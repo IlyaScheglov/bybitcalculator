@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 5
+      author: IlyaScheglov
+      changes:
+        - renameColumn:
+            tableName: shedlock
+            oldColumnName: lock_by
+            newColumnName: locked_by

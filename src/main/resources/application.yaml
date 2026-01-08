@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: bybit-calculator
+  datasource:
+    url: jdbc:postgresql://bybit-calculator-database:5432/BybitCalculatorDB?prepareThreshold=0
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 40
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/changelog-master.yaml
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    open-in-view: false
+  kafka:
+    bootstrap-servers: http://kafka:29092
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: false
+    consumer:
+      group-id: ${spring.application.name}
+      max-poll-records: 100
+      isolation-level: READ_COMMITTED
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        max.poll.interval.ms: 600000
+
+async-executor:
+  core-pool-size: 100
+  max-pool-size: 1000
+
+api-key: {NO_DEFAULT_VALUE}
+
+scheduler:
+  calculate-pumps-worker:
+    enabled: true
+    cron: 0 0/1 * * * *
+    lock-at-least: 10s
+    lock-at-most: 55s
+  calculate-ready-to-sell-worker:
+    enabled: true
+    cron: 30 0/1 * * * *
+    lock-at-least: 10s
+    lock-at-most: 55s
+  delete-old-charts-worker:
+    enabled: true
+    cron: 0 0 0 * * *
+    lock-at-least: 1h
+    lock-at-most: 3h
+
+eureka:
+  client:
+    jersey:
+      enabled: false
+    service-url:
+      defaultZone: http://registry:8089/eureka
+  instance:
+    instance-id: ${spring.application.name}:${random.value}

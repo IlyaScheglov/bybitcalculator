@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 3
+      author: IlyaScheglov
+      changes:
+        - createIndex:
+            indexName: users_tg_id_idx
+            tableName: users
+            columns:
+              - column:
+                  name: tg_id
+        - createIndex:
+            indexName: charts_timestamp_idx
+            tableName: charts
+            columns:
+              - column:
+                  name: timestamp

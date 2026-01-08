@@ -1,0 +1,79 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: IlyaScheglov
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: users_id_pk
+              - column:
+                  name: tg_id
+                  type: varchar
+                  constraints:
+                    nullable: false
+              - column:
+                  name: min_percent_of_push
+                  type: numeric(15, 10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: boolean
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: charts
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: charts_id_pk
+              - column:
+                  name: symbol
+                  type: varchar
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: numeric(15, 10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timestamp
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: purchases
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: purchases_id_pk
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: symbol
+                  type: varchar
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseColumnNames: user_id
+            baseTableName: purchases
+            constraintName: purchases_user_id_fk
+            referencedColumnNames: id
+            referencedTableName: users
+

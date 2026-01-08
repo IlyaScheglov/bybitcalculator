@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <profiles>
+        <profile>
+            <id>main-profile</id>
+            <repositories>
+                <repository>
+                    <id>maven-main</id>        
+                    <url>https://repo.maven.apache.org/maven2</url>
+                </repository> 
+                <repository>
+                    <id>my-nexus</id>        
+                    <url>https://nexus.ilyxxxa-server.ru/repository/maven-public</url>
+                </repository>           
+            </repositories>  
+        </profile>
+    </profiles>
+    <activeProfiles>
+        <activeProfile>main-profile</activeProfile>    
+    </activeProfiles>
+
+    <servers>
+        <server>
+            <id>my-nexus</id>
+            <username>public</username>
+            <password>public</password>
+            <url>https://nexus.ilyxxxa-server.ru/repository/maven-public</url>
+        </server>
+    </servers>
+</settings>

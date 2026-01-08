@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 4
+      author: IlyaScheglov
+      changes:
+        - addColumn:
+            tableName: purchases
+            columns:
+              - column:
+                  name: update_timestamp
+                  type: timestamptz
+                  constraints:
+                    nullable: true
+              - column:
+                  name: max_price
+                  type: numeric(15, 10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: atr_amount
+                  type: numeric(15, 10)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: atr_count
+                  type: integer
+                  constraints:
+                    nullable: false

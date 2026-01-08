@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 6
+      author: IlyaScheglov
+      changes:
+        - addColumn:
+            tableName: purchases
+            columns:
+              - column:
+                  name: create_timestamp
+                  type: timestamptz
+                  constraints:
+                    nullable: false
