@@ -26,19 +26,7 @@ public class Purchase {
     String symbol;
 
     @Column(nullable = false)
-    OffsetDateTime createTimestamp;
-
-    @Column(nullable = false)
-    OffsetDateTime updateTimestamp;
-
-    @Column(nullable = false)
-    BigDecimal maxPrice;
-
-    @Column(nullable = false)
-    BigDecimal atrAmount;
-
-    @Column(nullable = false)
-    Integer atrCount;
+    BigDecimal buyPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")

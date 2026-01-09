@@ -33,11 +33,7 @@ public class PurchaseService {
         var newPurchase = new Purchase()
                 .setUser(user)
                 .setSymbol(symbol)
-                .setCreateTimestamp(OffsetDateTime.now())
-                .setUpdateTimestamp(OffsetDateTime.now())
-                .setAtrAmount(BigDecimal.ZERO)
-                .setAtrCount(0)
-                .setMaxPrice(lastPrice);
+                .setBuyPrice(lastPrice);
         purchaseRepository.save(newPurchase);
         return String.format("Спот %s успешно куплен", symbol);
     }

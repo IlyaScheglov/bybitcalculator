@@ -10,8 +10,8 @@ import java.math.BigDecimal;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SymbolCalculatedPumpPercent {
+public class SymbolCalculatedDumpPercent {
 
     String symbol;
-    BigDecimal pumpPercent;
+    BigDecimal dumpPercent;
 }

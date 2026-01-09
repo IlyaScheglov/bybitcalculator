@@ -22,15 +22,6 @@ public interface ChartRepository extends JpaRepository<Chart, UUID> {
             """)
     List<Chart> findByTimestampIsAfter(@Param("timestampAfter") OffsetDateTime timestampAfter);
 
-    @Query("""
-            select c 
-            from Chart c 
-            where c.symbol = :symbol 
-            and c.timestamp >= :timestampAfter
-            """)
-    List<Chart> findBySymbolAndTimestampIsAfter(@Param("symbol") String symbol,
-                                                  @Param("timestampAfter") OffsetDateTime timestampAfter);
-
     @Modifying
     @Query("""
             delete from Chart c 

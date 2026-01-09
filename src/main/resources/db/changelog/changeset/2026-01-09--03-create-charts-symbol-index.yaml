@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 9
+      author: IlyaScheglov
+      changes:
+        - createIndex:
+            indexName: charts_symbol_idx
+            tableName: charts
+            columns:
+              - column:
+                  name: symbol

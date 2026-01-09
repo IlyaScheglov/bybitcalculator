@@ -2,6 +2,7 @@ package sry.mail.BybitCalculator.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import sry.mail.BybitCalculator.dto.ChangeUserSettingsDto;
 import sry.mail.BybitCalculator.dto.CreateUserRequestDto;
 import sry.mail.BybitCalculator.service.UserService;
 import sry.mail.BybitCalculator.util.ExceptionMessagesInterceptionUtils;
@@ -17,6 +18,12 @@ public class UserController {
     public String createUser(@RequestBody CreateUserRequestDto requestDto) {
         return ExceptionMessagesInterceptionUtils.getOrReturnExceptionMessage(
                 () -> userService.createNewUser(requestDto));
+    }
+
+    @PutMapping
+    public String changeUserSettings(@RequestBody ChangeUserSettingsDto requestDto) {
+        return ExceptionMessagesInterceptionUtils.getOrReturnExceptionMessage(
+                () -> userService.changeUserSetting(requestDto));
     }
 
     @PatchMapping("/make-active")

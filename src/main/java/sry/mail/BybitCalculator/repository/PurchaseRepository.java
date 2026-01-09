@@ -25,11 +25,7 @@ public interface PurchaseRepository extends JpaRepository<Purchase, UUID> {
     Optional<Purchase> findBySymbolAndUserTgId(@Param("symbol") String symbol,
                                                @Param("tgId") String tgId);;
 
-    @Query("""
-            select p 
-            from Purchase p 
-            join fetch p.user 
-            where p.createTimestamp <= :maxCreateTimestamp
-            """)
-    List<Purchase> findByCreateTimestampIsBefore(@Param("maxCreateTimestamp") OffsetDateTime maxCreateTimestamp);
+    @Override
+    @EntityGraph(attributePaths = "user")
+    List<Purchase> findAll();
 }

@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 7
+      author: IlyaScheglov
+      changes:
+        - dropColumn:
+            tableName: purchases
+            columnName: update_timestamp
+        - dropColumn:
+            tableName: purchases
+            columnName: max_price
+        - dropColumn:
+            tableName: purchases
+            columnName: atr_amount
+        - dropColumn:
+            tableName: purchases
+            columnName: atr_count
+        - dropColumn:
+            tableName: purchases
+            columnName: create_timestamp
+        - addColumn:
+            tableName: purchases
+            columns:
+              - column:
+                  name: buy_price
+                  type: numeric(15, 10)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

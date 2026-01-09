@@ -40,7 +40,7 @@ async-executor:
 api-key: {NO_DEFAULT_VALUE}
 
 scheduler:
-  calculate-pumps-worker:
+  calculate-dumps-worker:
     enabled: true
     cron: 0 0/1 * * * *
     lock-at-least: 10s

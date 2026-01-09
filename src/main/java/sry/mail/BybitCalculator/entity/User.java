@@ -26,7 +26,10 @@ public class User {
     String tgId;
 
     @Column(nullable = false)
-    BigDecimal minPercentOfPush;
+    BigDecimal minPercentOfDump;
+
+    @Column(nullable = false)
+    BigDecimal minPercentOfIncome;
 
     @Column(nullable = false)
     Boolean active;

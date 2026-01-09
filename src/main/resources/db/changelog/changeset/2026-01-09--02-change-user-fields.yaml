@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 8
+      author: IlyaScheglov
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: min_percent_of_income
+                  type: numeric(15, 10)
+                  defaultValueNumeric: 5
+                  constraints:
+                    nullable: false
+        - renameColumn:
+            tableName: users
+            oldColumnName: min_percent_of_push
+            newColumnName: min_percent_of_dump
+            columnDataType: numeric(15, 10)
