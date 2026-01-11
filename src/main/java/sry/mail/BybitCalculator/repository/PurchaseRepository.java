@@ -23,7 +23,16 @@ public interface PurchaseRepository extends JpaRepository<Purchase, UUID> {
             and u.tg_id = :tgId
             """)
     Optional<Purchase> findBySymbolAndUserTgId(@Param("symbol") String symbol,
-                                               @Param("tgId") String tgId);;
+                                               @Param("tgId") String tgId);
+
+    @Query(nativeQuery = true, value = """
+            select p.* 
+            from users u 
+            join purchases p 
+            on p.user_id = u.id 
+            where u.tg_id = :tgId
+            """)
+    List<Purchase> findByUserTgId(@Param("tgId") String tgId);
 
     @Override
     @EntityGraph(attributePaths = "user")

@@ -13,6 +13,12 @@ public class PurchaseController {
 
     private final PurchaseService purchaseService;
 
+    @GetMapping
+    public String getUserPurchasesInfo(@RequestParam("tgId") String tgId) {
+        return ExceptionMessagesInterceptionUtils.getOrReturnExceptionMessage(
+                () -> purchaseService.getUserPurchasesInfo(tgId));
+    }
+
     @PostMapping
     public String createPurchase(@RequestBody PurchaseRequestDto requestDto) {
         return ExceptionMessagesInterceptionUtils.getOrReturnExceptionMessage(

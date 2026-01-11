@@ -3,18 +3,24 @@ package sry.mail.BybitCalculator.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import sry.mail.BybitCalculator.entity.Chart;
 import sry.mail.BybitCalculator.entity.Purchase;
+import sry.mail.BybitCalculator.model.PurchaseInfoModel;
 import sry.mail.BybitCalculator.repository.ChartRepository;
 import sry.mail.BybitCalculator.repository.PurchaseRepository;
 import sry.mail.BybitCalculator.repository.UserRepository;
+import sry.mail.BybitCalculator.util.CalculationUtils;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PurchaseService {
+
+    private static final String PURCHASE_INFO_MESSAGE_TEMPLATE = "%s: Цена покупки - %s, цена сейчас - %s, процент роста - %s";
 
     private final PurchaseRepository purchaseRepository;
     private final UserRepository userRepository;
@@ -44,5 +50,28 @@ public class PurchaseService {
                 .orElseThrow(() -> new RuntimeException(String.format("Покупка пользователем спота %s не найдена", symbol)));
         purchaseRepository.delete(purchase);
         return String.format("Покупка пользователем спота %s успешно удалена", symbol);
+    }
+
+    public String getUserPurchasesInfo(String tgId) {
+        return purchaseRepository.findByUserTgId(tgId).stream()
+                .map(this::mapPurchaseToUserPurchaseInfo)
+                .map(purchaseInfo -> String.format(PURCHASE_INFO_MESSAGE_TEMPLATE,
+                        purchaseInfo.getSymbol(), purchaseInfo.getBuyPrice(), purchaseInfo.getNowPrice(), purchaseInfo.getIncomePercent()))
+                .collect(Collectors.joining("\n"));
+    }
+
+    private PurchaseInfoModel mapPurchaseToUserPurchaseInfo(Purchase purchase) {
+        var symbol = purchase.getSymbol();
+        var buyPrice = purchase.getBuyPrice();
+        var lastPrice = chartRepository.findTopBySymbolOrderByTimestampDesc(symbol)
+                .map(Chart::getPrice)
+                .orElse(BigDecimal.ZERO);
+
+        return PurchaseInfoModel.builder()
+                .symbol(symbol)
+                .buyPrice(buyPrice)
+                .nowPrice(lastPrice)
+                .incomePercent(CalculationUtils.calculateDiffInPercents(buyPrice, lastPrice))
+                .build();
     }
 }

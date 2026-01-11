@@ -16,6 +16,7 @@ import sry.mail.BybitCalculator.repository.ChartRepository;
 import sry.mail.BybitCalculator.repository.PurchaseRepository;
 import sry.mail.BybitCalculator.repository.UserRepository;
 import sry.mail.BybitCalculator.util.AsyncCollectionProcessingUtils;
+import sry.mail.BybitCalculator.util.CalculationUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -86,10 +87,7 @@ public class CalculationService {
             var userInfo = purchase.getUser();
             var buyPrice = purchase.getBuyPrice();
 
-            var incomePercent = lastChartOfSymbol.get().getPrice().subtract(buyPrice)
-                    .divide(buyPrice, 100, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100))
-                    .setScale(10, RoundingMode.HALF_UP);
+            var incomePercent = CalculationUtils.calculateDiffInPercents(buyPrice, lastChartOfSymbol.get().getPrice());
 
             if (incomePercent.compareTo(userInfo.getMinPercentOfIncome()) > -1) {
                 userNotificationEventProducer.sendUserNotificationEvent(UserNotificationEventDto.builder()
@@ -113,10 +111,7 @@ public class CalculationService {
     private BigDecimal findDumpPercentOfSymbol(List<Chart> charts) {
         var firstPrice = findFirstPrice(charts);
         var lastPrice = findLastPrice(charts);
-        return lastPrice.subtract(firstPrice)
-                .divide(firstPrice, 100, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(-100))
-                .setScale(10, RoundingMode.HALF_UP);
+        return CalculationUtils.calculateDiffInPercents(firstPrice, lastPrice).multiply(BigDecimal.valueOf(-1));
     }
 
     private BigDecimal findFirstPrice(List<Chart> charts) {
