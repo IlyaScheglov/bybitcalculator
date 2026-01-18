@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import sry.mail.BybitCalculator.dto.ChangeUserSettingsDto;
 import sry.mail.BybitCalculator.dto.CreateUserRequestDto;
-import sry.mail.BybitCalculator.dto.UserSettingsResponseDto;
 import sry.mail.BybitCalculator.service.UserService;
 import sry.mail.BybitCalculator.util.ExceptionMessagesInterceptionUtils;
 

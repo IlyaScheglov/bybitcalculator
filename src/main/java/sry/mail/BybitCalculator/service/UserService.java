@@ -6,13 +6,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sry.mail.BybitCalculator.dto.ChangeUserSettingsDto;
 import sry.mail.BybitCalculator.dto.CreateUserRequestDto;
-import sry.mail.BybitCalculator.dto.UserSettingsResponseDto;
 import sry.mail.BybitCalculator.mapper.UserMapper;
 import sry.mail.BybitCalculator.repository.UserRepository;
 import sry.mail.BybitCalculator.util.CodeHelperUtils;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @RequiredArgsConstructor
