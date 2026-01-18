@@ -9,7 +9,11 @@ import sry.mail.BybitCalculator.entity.User;
 public interface UserMapper {
 
     @Mapping(target = "active", constant = "false")
-    @Mapping(target = "minPercentOfDump", constant = "5")
-    @Mapping(target = "minPercentOfIncome", constant = "5")
+    @Mapping(target = "longPercent", constant = "3")
+    @Mapping(target = "longMinutes", constant = "3")
+    @Mapping(target = "shortPercent", constant = "30")
+    @Mapping(target = "shortMinutes", constant = "10")
+    @Mapping(target = "dumpPercent", constant = "10")
+    @Mapping(target = "dumpMinutes", constant = "15")
     User mapCreateUserDtoToUserEntity(CreateUserRequestDto createUserDto);
 }

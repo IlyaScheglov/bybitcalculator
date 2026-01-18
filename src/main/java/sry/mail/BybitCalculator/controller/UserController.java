@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import sry.mail.BybitCalculator.dto.ChangeUserSettingsDto;
 import sry.mail.BybitCalculator.dto.CreateUserRequestDto;
+import sry.mail.BybitCalculator.dto.UserSettingsResponseDto;
 import sry.mail.BybitCalculator.service.UserService;
 import sry.mail.BybitCalculator.util.ExceptionMessagesInterceptionUtils;
 
@@ -18,6 +19,12 @@ public class UserController {
     public String createUser(@RequestBody CreateUserRequestDto requestDto) {
         return ExceptionMessagesInterceptionUtils.getOrReturnExceptionMessage(
                 () -> userService.createNewUser(requestDto));
+    }
+
+    @GetMapping
+    public String getUserSettings(@RequestParam("tgId") String tgId) {
+        return ExceptionMessagesInterceptionUtils.getOrReturnExceptionMessage(
+                () -> userService.getUserSettings(tgId));
     }
 
     @PutMapping

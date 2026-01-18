@@ -2,24 +2,18 @@ package sry.mail.BybitCalculator.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import sry.mail.BybitCalculator.entity.Chart;
-import sry.mail.BybitCalculator.entity.Purchase;
 import sry.mail.BybitCalculator.entity.User;
-import sry.mail.BybitCalculator.kafka.dto.BybitParsedEventDto;
 import sry.mail.BybitCalculator.kafka.dto.NotificationType;
 import sry.mail.BybitCalculator.kafka.dto.UserNotificationEventDto;
 import sry.mail.BybitCalculator.kafka.producer.UserNotificationEventProducer;
-import sry.mail.BybitCalculator.mapper.ChartMapper;
-import sry.mail.BybitCalculator.model.SymbolCalculatedDumpPercent;
+import sry.mail.BybitCalculator.model.SymbolCalculatedPercent;
 import sry.mail.BybitCalculator.repository.ChartRepository;
-import sry.mail.BybitCalculator.repository.PurchaseRepository;
 import sry.mail.BybitCalculator.repository.UserRepository;
 import sry.mail.BybitCalculator.util.AsyncCollectionProcessingUtils;
 import sry.mail.BybitCalculator.util.CalculationUtils;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -31,87 +25,63 @@ import java.util.stream.Collectors;
 public class CalculationService {
 
     private final ChartRepository chartRepository;
-    private final ChartMapper chartMapper;
     private final UserRepository userRepository;
-    private final PurchaseRepository purchaseRepository;
 
     private final AsyncCollectionProcessingUtils asyncCollectionProcessingUtils;
     private final UserNotificationEventProducer userNotificationEventProducer;
 
-    @Transactional
-    public void saveNewChart(BybitParsedEventDto bybitEvent) {
-        chartRepository.save(chartMapper.mapEventDtoToChartEntity(bybitEvent));
-    }
+    public void calculateNotifications() {
+        var nowDateTime = OffsetDateTime.now();
+        var maxMinutes = userRepository.findMaxMinutesPeriod();
 
-    @Transactional
-    public void deleteOldCharts() {
-        chartRepository.deleteChartsWhereTimestampIsBefore(OffsetDateTime.now().minusDays(1));
-    }
+        if (maxMinutes.isEmpty()) {
+            return;
+        }
 
-    public void calculateDumps() {
-        var fiveMinutesAgoTimestamp = OffsetDateTime.now().minusMinutes(5);
-        var chartsBySymbolMap = chartRepository.findByTimestampIsAfter(fiveMinutesAgoTimestamp)
+        var chartsBySymbolMap = chartRepository.findByTimestampIsAfter(nowDateTime.minusMinutes(maxMinutes.get()))
                 .stream()
                 .collect(Collectors.groupingBy(Chart::getSymbol));
-
-        var dumpPercent = getEverySymbolDumpPercents(chartsBySymbolMap);
         var activeUsers = userRepository.findByActiveIsTrue();
 
         asyncCollectionProcessingUtils.runForEachElementAsync(activeUsers,
-                user -> sendUserNotificationIfThereAreAppropriateDumps(user, dumpPercent));
+                user -> sendUserNotificationIfThereAreAppropriateSignals(user, chartsBySymbolMap, nowDateTime));
     }
 
-    public void calculateReadyToSell() {
-        var purchases = purchaseRepository.findAll();
-        asyncCollectionProcessingUtils.runForEachElementAsync(purchases, this::sendUserNotificationIfSymbolIsReadyToSell);
-    }
+    private void sendUserNotificationIfThereAreAppropriateSignals(User user, Map<String, List<Chart>> chartsMap,
+                                                                  OffsetDateTime nowDateTime) {
+        var longPercents = getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(user.getLongMinutes()), false);
+        var shortPercents = getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(user.getShortMinutes()), false);
+        var dumpPercents = getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(user.getDumpMinutes()), true);
 
-    private void sendUserNotificationIfThereAreAppropriateDumps(User user, List<SymbolCalculatedDumpPercent> dumpPercents) {
+        longPercents.stream()
+                .filter(symbolPercent -> symbolPercent.getPercent().compareTo(user.getLongPercent()) > -1)
+                .forEach(symbolPercent -> sendMessage(user, symbolPercent, NotificationType.LONG));
+        shortPercents.stream()
+                .filter(symbolPercent -> symbolPercent.getPercent().compareTo(user.getShortPercent()) > -1)
+                .forEach(symbolPercent -> sendMessage(user, symbolPercent, NotificationType.SHORT));
         dumpPercents.stream()
-                .filter(dumpPercent ->
-                        dumpPercent.getDumpPercent().compareTo(user.getMinPercentOfDump()) > -1)
-                .forEach(dumpPercent ->
-                        userNotificationEventProducer.sendUserNotificationEvent(
-                                UserNotificationEventDto.builder()
-                                        .tgId(user.getTgId())
-                                        .symbol(dumpPercent.getSymbol())
-                                        .type(NotificationType.BUY)
-                                        .build()));
+                .filter(symbolPercent -> symbolPercent.getPercent().compareTo(user.getDumpPercent()) > -1)
+                .forEach(symbolPercent -> sendMessage(user, symbolPercent, NotificationType.DUMP));
     }
 
-    private void sendUserNotificationIfSymbolIsReadyToSell(Purchase purchase) {
-        var lastChartOfSymbol = chartRepository
-                .findTopBySymbolOrderByTimestampDesc(purchase.getSymbol());
+    private List<SymbolCalculatedPercent> getEverySymbolPercentsForMinutes(Map<String, List<Chart>> chartsMap,
+                                                                           OffsetDateTime afterTime, boolean revertPercents) {
 
-        if (lastChartOfSymbol.isPresent()) {
-            var userInfo = purchase.getUser();
-            var buyPrice = purchase.getBuyPrice();
-
-            var incomePercent = CalculationUtils.calculateDiffInPercents(buyPrice, lastChartOfSymbol.get().getPrice());
-
-            if (incomePercent.compareTo(userInfo.getMinPercentOfIncome()) > -1) {
-                userNotificationEventProducer.sendUserNotificationEvent(UserNotificationEventDto.builder()
-                        .tgId(purchase.getUser().getTgId())
-                        .symbol(purchase.getSymbol())
-                        .type(NotificationType.SELL)
-                        .build());
-            }
-        }
-    }
-
-    private List<SymbolCalculatedDumpPercent> getEverySymbolDumpPercents(Map<String, List<Chart>> chartsMap) {
         return chartsMap.entrySet().stream()
-                .map(chartEntry -> SymbolCalculatedDumpPercent.builder()
-                        .symbol(chartEntry.getKey())
-                        .dumpPercent(findDumpPercentOfSymbol(chartEntry.getValue()))
-                        .build())
-                .toList();
-    }
+                .map(chartEntry -> {
+                    var chartsAfterTime = chartEntry.getValue().stream()
+                            .filter(chart -> !chart.getTimestamp().isBefore(afterTime))
+                            .toList();
+                    var percentOriginal = CalculationUtils
+                            .calculateDiffInPercents(findFirstPrice(chartsAfterTime), findLastPrice(chartsAfterTime));
+                    var percent = revertPercents ? percentOriginal.multiply(BigDecimal.valueOf(-1)) : percentOriginal;
 
-    private BigDecimal findDumpPercentOfSymbol(List<Chart> charts) {
-        var firstPrice = findFirstPrice(charts);
-        var lastPrice = findLastPrice(charts);
-        return CalculationUtils.calculateDiffInPercents(firstPrice, lastPrice).multiply(BigDecimal.valueOf(-1));
+                    return SymbolCalculatedPercent.builder()
+                            .symbol(chartEntry.getKey())
+                            .percent(percent)
+                            .build();
+                })
+                .toList();
     }
 
     private BigDecimal findFirstPrice(List<Chart> charts) {
@@ -126,5 +96,15 @@ public class CalculationService {
                 .max(Comparator.comparing(Chart::getTimestamp))
                 .map(Chart::getPrice)
                 .orElse(BigDecimal.ZERO);
+    }
+
+    private void sendMessage(User user, SymbolCalculatedPercent symbolCalculatedPercent, NotificationType type) {
+        var message = UserNotificationEventDto.builder()
+                .tgId(user.getTgId())
+                .symbol(symbolCalculatedPercent.getSymbol())
+                .percent(symbolCalculatedPercent.getPercent())
+                .type(type)
+                .build();
+        userNotificationEventProducer.sendUserNotificationEvent(message);
     }
 }

@@ -45,11 +45,6 @@ scheduler:
     cron: 0 0/1 * * * *
     lock-at-least: 10s
     lock-at-most: 55s
-  calculate-ready-to-sell-worker:
-    enabled: true
-    cron: 30 0/1 * * * *
-    lock-at-least: 10s
-    lock-at-most: 55s
   delete-old-charts-worker:
     enabled: true
     cron: 0 0 0 * * *

@@ -12,7 +12,7 @@ import sry.mail.BybitCalculator.service.CalculationService;
 @Component
 @ConditionalOnProperty(value = "scheduler.calculate-dumps-worker.enabled", havingValue = "true")
 @RequiredArgsConstructor
-public class CalculateDumpsWorker {
+public class CalculateNotificationsWorker {
 
     private final CalculationService calculationService;
 
@@ -22,7 +22,7 @@ public class CalculateDumpsWorker {
             lockAtMostFor = "${scheduler.calculate-dumps-worker.lock-at-most}")
     public void calculateDumps() {
         log.info("Calculate dump worker started");
-        calculationService.calculateDumps();
+        calculationService.calculateNotifications();
         log.info("Calculate dump worker finished");
     }
 }

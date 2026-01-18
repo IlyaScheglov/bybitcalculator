@@ -20,5 +20,6 @@ public class BybitParsedEventDto {
 
     String symbol;
     BigDecimal price;
+    BigDecimal turnover;
     OffsetDateTime timestamp;
 }

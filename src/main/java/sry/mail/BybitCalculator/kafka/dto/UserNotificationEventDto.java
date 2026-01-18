@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.jackson.Jacksonized;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @Jacksonized
@@ -17,5 +19,6 @@ public class UserNotificationEventDto {
 
     String tgId;
     String symbol;
+    BigDecimal percent;
     NotificationType type;
 }

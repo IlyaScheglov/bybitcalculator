@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 10
+      author: IlyaScheglov
+      changes:
+        - addColumn:
+            tableName: charts
+            columns:
+              - column:
+                  name: turnover
+                  type: numeric(25, 0)
+                  defaultValueNumeric: 500000
+                  constraints:
+                    nullable: false

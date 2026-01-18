@@ -32,5 +32,8 @@ public class Chart {
     BigDecimal price;
 
     @Column(nullable = false)
+    BigDecimal turnover;
+
+    @Column(nullable = false)
     OffsetDateTime timestamp;
 }

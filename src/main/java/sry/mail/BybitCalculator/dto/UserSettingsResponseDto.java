@@ -1,6 +1,5 @@
 package sry.mail.BybitCalculator.dto;
 
-import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
@@ -10,9 +9,8 @@ import java.math.BigDecimal;
 @Value
 @Builder
 @Jacksonized
-public class ChangeUserSettingsDto {
+public class UserSettingsResponseDto {
 
-    String tgId;
     BigDecimal longPercent;
     Integer longMinutes;
     BigDecimal shortPercent;

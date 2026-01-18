@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: 11
+      author: IlyaScheglov
+      changes:
+        - dropColumn:
+            tableName: users
+            columnName: min_percent_of_dump
+        - dropColumn:
+            tableName: users
+            columnName: min_percent_of_income
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: long_percent
+                  type: numeric(15, 10)
+                  defaultValueNumeric: 3
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: long_minutes
+                  type: integer
+                  defaultValueNumeric: 3
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: short_percent
+                  type: numeric(15, 10)
+                  defaultValueNumeric: 30
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: short_minutes
+                  type: integer
+                  defaultValueNumeric: 10
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: dump_percent
+                  type: numeric(15, 10)
+                  defaultValueNumeric: 10
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: dump_minutes
+                  type: integer
+                  defaultValueNumeric: 15
+                  constraints:
+                    nullable: false

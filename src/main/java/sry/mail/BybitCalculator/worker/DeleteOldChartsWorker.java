@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import sry.mail.BybitCalculator.service.CalculationService;
+import sry.mail.BybitCalculator.service.ChartService;
 
 @Slf4j
 @Component
@@ -14,7 +15,7 @@ import sry.mail.BybitCalculator.service.CalculationService;
 @RequiredArgsConstructor
 public class DeleteOldChartsWorker {
 
-    private final CalculationService calculationService;
+    private final ChartService chartService;
 
     @Scheduled(cron = "${scheduler.delete-old-charts-worker.cron}")
     @SchedulerLock(name = "DeleteOldChartsWorker",
@@ -22,7 +23,7 @@ public class DeleteOldChartsWorker {
             lockAtMostFor = "${scheduler.delete-old-charts-worker.lock-at-most}")
     public void deleteOldCharts() {
         log.info("Delete old charts worker started");
-        calculationService.deleteOldCharts();
+        chartService.deleteOldCharts();
         log.info("Delete old charts worker finished");
     }
 }
