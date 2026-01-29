@@ -12,4 +12,5 @@ public class AsyncExecutorProperties {
 
     Integer corePoolSize;
     Integer maxPoolSize;
+    Integer queueCapacity;
 }

@@ -36,6 +36,7 @@ spring:
 async-executor:
   core-pool-size: 100
   max-pool-size: 1000
+  queue-capacity: 100
 
 api-key: {NO_DEFAULT_VALUE}
 

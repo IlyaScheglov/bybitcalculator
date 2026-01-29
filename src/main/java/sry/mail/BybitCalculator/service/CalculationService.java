@@ -1,6 +1,7 @@
 package sry.mail.BybitCalculator.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import sry.mail.BybitCalculator.entity.Chart;
 import sry.mail.BybitCalculator.entity.User;
@@ -14,10 +15,13 @@ import sry.mail.BybitCalculator.util.AsyncCollectionProcessingUtils;
 import sry.mail.BybitCalculator.util.CalculationUtils;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.*;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +34,9 @@ public class CalculationService {
     private final AsyncCollectionProcessingUtils asyncCollectionProcessingUtils;
     private final UserNotificationEventProducer userNotificationEventProducer;
 
+    @Qualifier("asyncExecutor")
+    private final Executor executor;
+
     public void calculateNotifications() {
         var nowDateTime = OffsetDateTime.now();
         var maxMinutes = userRepository.findMaxMinutesPeriod();
@@ -38,28 +45,55 @@ public class CalculationService {
             return;
         }
 
-        var chartsBySymbolMap = chartRepository.findByTimestampIsAfter(nowDateTime.minusMinutes(maxMinutes.get()))
+        var timestampAfter = nowDateTime.minusMinutes(maxMinutes.get());
+        var chartsBySymbolMap = chartRepository.findByTimestampIsAfter(timestampAfter)
                 .stream()
                 .collect(Collectors.groupingBy(Chart::getSymbol));
         var activeUsers = userRepository.findByActiveIsTrue();
 
+        var longMinutes = activeUsers.stream()
+                .map(User::getLongMinutes)
+                .toList();
+        var shortMinutes = activeUsers.stream()
+                .map(User::getShortMinutes)
+                .toList();
+        var dumpMinutes = activeUsers.stream()
+                .map(User::getDumpMinutes)
+                .toList();
+
+        var longCalculationMapFuture = CompletableFuture.supplyAsync(() -> calculatePercentsForEveryMinute(
+                longMinutes, chartsBySymbolMap, nowDateTime, false), executor);
+        var shortCalculationMapFuture = CompletableFuture.supplyAsync(() -> calculatePercentsForEveryMinute(
+                shortMinutes, chartsBySymbolMap, nowDateTime, false), executor);
+        var dumpCalculationMapFuture = CompletableFuture.supplyAsync(() -> calculatePercentsForEveryMinute(
+                dumpMinutes, chartsBySymbolMap, nowDateTime, true), executor);
+
+
         asyncCollectionProcessingUtils.runForEachElementAsync(activeUsers,
-                user -> sendUserNotificationIfThereAreAppropriateSignals(user, chartsBySymbolMap, nowDateTime));
+                user -> sendUserNotificationIfThereAreAppropriateSignals(user, longCalculationMapFuture.join(),
+                        shortCalculationMapFuture.join(), dumpCalculationMapFuture.join()));
     }
 
-    private void sendUserNotificationIfThereAreAppropriateSignals(User user, Map<String, List<Chart>> chartsMap,
-                                                                  OffsetDateTime nowDateTime) {
-        var longPercents = getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(user.getLongMinutes()), false);
-        var shortPercents = getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(user.getShortMinutes()), false);
-        var dumpPercents = getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(user.getDumpMinutes()), true);
+    private Map<Integer, List<SymbolCalculatedPercent>> calculatePercentsForEveryMinute(List<Integer> minutes,
+                                                                         Map<String, List<Chart>> chartsMap,
+                                                                         OffsetDateTime nowDateTime,
+                                                                         boolean reverted) {
+        return asyncCollectionProcessingUtils.supplyForEachElementAsync(minutes,
+                minute -> Map.entry(minute, getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(minute), reverted)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 
-        longPercents.stream()
+    private void sendUserNotificationIfThereAreAppropriateSignals(User user,
+                                                                  Map<Integer, List<SymbolCalculatedPercent>> longMinutePercentsMap,
+                                                                  Map<Integer, List<SymbolCalculatedPercent>> shortMinutePercentsMap,
+                                                                  Map<Integer, List<SymbolCalculatedPercent>> dumpMinutePercentsMap) {
+        longMinutePercentsMap.getOrDefault(user.getLongMinutes(), Collections.emptyList()).stream()
                 .filter(symbolPercent -> symbolPercent.getPercent().compareTo(user.getLongPercent()) > -1)
                 .forEach(symbolPercent -> sendMessage(user, symbolPercent, NotificationType.LONG));
-        shortPercents.stream()
+        shortMinutePercentsMap.getOrDefault(user.getShortMinutes(), Collections.emptyList()).stream()
                 .filter(symbolPercent -> symbolPercent.getPercent().compareTo(user.getShortPercent()) > -1)
                 .forEach(symbolPercent -> sendMessage(user, symbolPercent, NotificationType.SHORT));
-        dumpPercents.stream()
+        dumpMinutePercentsMap.getOrDefault(user.getDumpMinutes(), Collections.emptyList()).stream()
                 .filter(symbolPercent -> symbolPercent.getPercent().compareTo(user.getDumpPercent()) > -1)
                 .forEach(symbolPercent -> sendMessage(user, symbolPercent, NotificationType.DUMP));
     }

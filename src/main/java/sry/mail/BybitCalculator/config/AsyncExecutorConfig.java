@@ -17,6 +17,7 @@ public class AsyncExecutorConfig {
         var executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(asyncExecutorProperties.getCorePoolSize());
         executor.setMaxPoolSize(asyncExecutorProperties.getMaxPoolSize());
+        executor.setQueueCapacity(asyncExecutorProperties.getQueueCapacity());
         executor.initialize();
         return executor;
     }
