@@ -17,8 +17,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByActiveIsTrue();
 
     @Query(nativeQuery = true, value = """
-            select greatest(long_minutes, short_minutes, dump_minutes) 
-            from users
+            select max(greatest(long_minutes, short_minutes, dump_minutes)) 
+            from users 
+            limit 1
             """)
     Optional<Integer> findMaxMinutesPeriod();
 }

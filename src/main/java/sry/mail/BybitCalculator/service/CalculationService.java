@@ -16,10 +16,7 @@ import sry.mail.BybitCalculator.util.CalculationUtils;
 
 import java.math.BigDecimal;
 import java.time.*;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -27,6 +24,17 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CalculationService {
+
+    private static final String TOP_SYMBOLS_FORMAT = """
+            Топ фьючерсов по проценту роста за %s минут: 
+            
+            %s
+            
+            Топ фьючерсов по проценту падения за %s минут:
+            
+            %s
+            """;
+    private static final String TOP_ELEMENT_FORMAT = "%s.%s - %s процентов\n";
 
     private final ChartRepository chartRepository;
     private final UserRepository userRepository;
@@ -45,21 +53,20 @@ public class CalculationService {
             return;
         }
 
-        var timestampAfter = nowDateTime.minusMinutes(maxMinutes.get());
-        var chartsBySymbolMap = chartRepository.findByTimestampIsAfter(timestampAfter)
+        var chartsBySymbolMap = chartRepository.findByTimestampIsAfter(nowDateTime.minusMinutes(maxMinutes.get()))
                 .stream()
                 .collect(Collectors.groupingBy(Chart::getSymbol));
         var activeUsers = userRepository.findByActiveIsTrue();
 
         var longMinutes = activeUsers.stream()
                 .map(User::getLongMinutes)
-                .toList();
+                .collect(Collectors.toSet());
         var shortMinutes = activeUsers.stream()
                 .map(User::getShortMinutes)
-                .toList();
+                .collect(Collectors.toSet());
         var dumpMinutes = activeUsers.stream()
                 .map(User::getDumpMinutes)
-                .toList();
+                .collect(Collectors.toSet());
 
         var longCalculationMapFuture = CompletableFuture.supplyAsync(() -> calculatePercentsForEveryMinute(
                 longMinutes, chartsBySymbolMap, nowDateTime, false), executor);
@@ -74,10 +81,33 @@ public class CalculationService {
                         shortCalculationMapFuture.join(), dumpCalculationMapFuture.join()));
     }
 
-    private Map<Integer, List<SymbolCalculatedPercent>> calculatePercentsForEveryMinute(List<Integer> minutes,
-                                                                         Map<String, List<Chart>> chartsMap,
-                                                                         OffsetDateTime nowDateTime,
-                                                                         boolean reverted) {
+    public String getTopSymbolsByPumpsAndDumpsForMinutes(Integer minutes) {
+        var topTime = OffsetDateTime.now().minusMinutes(minutes);
+        var chartsBySymbolMap = chartRepository.findByTimestampIsAfter(OffsetDateTime.now().minusMinutes(minutes))
+                .stream()
+                .collect(Collectors.groupingBy(Chart::getSymbol));
+
+        var symbolsPercents = getEverySymbolPercentsForMinutes(chartsBySymbolMap, topTime, false);
+
+        return String.format(TOP_SYMBOLS_FORMAT, minutes, calculateTopElementStrByCharts(symbolsPercents, false),
+                minutes, calculateTopElementStrByCharts(symbolsPercents, true));
+    }
+
+    private String calculateTopElementStrByCharts(List<SymbolCalculatedPercent> symbolsPercents, boolean reversed) {
+        var comparator = reversed
+                ? Comparator.comparing(SymbolCalculatedPercent::getPercent, Comparator.nullsLast(Comparator.reverseOrder()))
+                : Comparator.comparing(SymbolCalculatedPercent::getPercent, Comparator.nullsLast(Comparator.naturalOrder()));
+        return symbolsPercents.stream()
+                .sorted(comparator)
+                .limit(5)
+                .map(symbolInfo -> String.format(TOP_ELEMENT_FORMAT, 1, symbolInfo.getSymbol(), symbolInfo.getPercent()))
+                .collect(Collectors.joining());
+    }
+
+    private Map<Integer, List<SymbolCalculatedPercent>> calculatePercentsForEveryMinute(Set<Integer> minutes,
+                                                                                        Map<String, List<Chart>> chartsMap,
+                                                                                        OffsetDateTime nowDateTime,
+                                                                                        boolean reverted) {
         return asyncCollectionProcessingUtils.supplyForEachElementAsync(minutes,
                 minute -> Map.entry(minute, getEverySymbolPercentsForMinutes(chartsMap, nowDateTime.minusMinutes(minute), reverted)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
